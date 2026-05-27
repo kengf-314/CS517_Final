@@ -5,11 +5,26 @@
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from dataclasses import dataclass
 from matplotlib.axes import Axes
+from time import perf_counter
 from z3 import Solver, Int, Or, sat, ModelRef
 
 
-def solve_square_packing(container_size: int, square_sizes: list[int]) -> list[tuple[int, int]] | None:
+@dataclass(frozen=True)
+class PackingRun:
+    status: str
+    positions: list[tuple[int, int]] | None
+    solver_time_seconds: float
+    num_variables: int
+    num_assertions: int
+    num_boundary_constraints: int
+    num_non_overlap_constraints: int
+    total_square_area: int
+    container_area: int
+
+
+def solve_square_packing_with_stats(container_size: int, square_sizes: list[int]) -> PackingRun:
     solver = Solver()
     n = len(square_sizes)
 
@@ -36,16 +51,42 @@ def solve_square_packing(container_size: int, square_sizes: list[int]) -> list[t
             solver.add(Or(left, right, bottom, top))
 
     # Execute the solver
-    if solver.check() == sat:
+    start_time = perf_counter()
+    check_result = solver.check()
+    solver_time_seconds = perf_counter() - start_time
+
+    total_square_area = sum(s * s for s in square_sizes)
+    container_area = container_size * container_size
+    num_boundary_constraints = 4 * n
+    num_non_overlap_constraints = n * (n - 1) // 2
+
+    if check_result == sat:
         model: ModelRef = solver.model()
         positions = []
         for i in range(n):
             xi_val = model.eval(x_vars[i]).as_long()
             yi_val = model.eval(y_vars[i]).as_long()
             positions.append((xi_val, yi_val))
-        return positions
+        status = "SAT"
     else:
-        return None
+        positions = None
+        status = "UNSAT"
+
+    return PackingRun(
+        status=status,
+        positions=positions,
+        solver_time_seconds=solver_time_seconds,
+        num_variables=2 * n,
+        num_assertions=len(solver.assertions()),
+        num_boundary_constraints=num_boundary_constraints,
+        num_non_overlap_constraints=num_non_overlap_constraints,
+        total_square_area=total_square_area,
+        container_area=container_area,
+    )
+
+
+def solve_square_packing(container_size: int, square_sizes: list[int]) -> list[tuple[int, int]] | None:
+    return solve_square_packing_with_stats(container_size, square_sizes).positions
 
 
 def plot_square_packing_on_ax(ax: Axes, container_size: int, square_sizes: list[int], positions: list[tuple[int, int]] | None) -> None:
@@ -96,19 +137,39 @@ if __name__ == "__main__":
 
     # Flatten the 2D axes array to easily iterate over it
     axes_flat = axes.flatten()
+    runs = []
 
     for idx, L in enumerate(Ls):
         print(f"[{idx+1}/8] Trying to pack {len(S)} squares into a {L}x{L} container...")
-        result = solve_square_packing(L, S)
+        run = solve_square_packing_with_stats(L, S)
+        runs.append((L, run))
 
-        if result:
+        if run.positions:
             print(f" -> Solution found for L = {L}.")
         else:
             print(f" -> No solution (Unsat) for L = {L}.")
+        print(
+            " "
+            f"status={run.status}, "
+            f"time={run.solver_time_seconds:.4f}s, "
+            f"vars={run.num_variables}, "
+            f"assertions={run.num_assertions}, "
+            f"area={run.total_square_area}/{run.container_area}"
+        )
 
         # Draw on the corresponding subplot
         current_ax = axes_flat[idx]
-        plot_square_packing_on_ax(current_ax, L, S, result)
+        plot_square_packing_on_ax(current_ax, L, S, run.positions)
+
+    print("\nExperiment summary:")
+    print("L,#Squares,TotalArea,ContainerArea,Status,SolverTimeSeconds,Variables,Assertions,BoundaryConstraints,NonOverlapConstraints")
+    for L, run in runs:
+        print(
+            f"{L},{len(S)},{run.total_square_area},{run.container_area},"
+            f"{run.status},{run.solver_time_seconds:.6f},{run.num_variables},"
+            f"{run.num_assertions},{run.num_boundary_constraints},"
+            f"{run.num_non_overlap_constraints}"
+        )
 
     # Adjust layout to prevent overlap and show the plot
     plt.tight_layout()
@@ -126,3 +187,4 @@ if __name__ == "__main__":
 
     # Keep this line if you still want to see the pop-up window in VS Code; delete it if you only want to save the file
     plt.show()
+

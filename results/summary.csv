@@ -1,0 +1,26 @@
+name,mode,container_width,container_height,num_pieces,total_piece_area,container_area,density,status,solver_time_seconds,variables,assertions,boundary_constraints,non_overlap_constraints,rotation_variables,reason
+squares-L30,squares,30,30,13,88,900,0.0978,SAT,0.009721,26,132,52,78,0,
+squares-L25,squares,25,25,13,88,625,0.1408,SAT,0.007861,26,132,52,78,0,
+squares-L20,squares,20,20,13,88,400,0.2200,SAT,0.008829,26,132,52,78,0,
+squares-L15,squares,15,15,13,88,225,0.3911,SAT,0.013138,26,132,52,78,0,
+squares-L12,squares,12,12,13,88,144,0.6111,SAT,0.010657,26,132,52,78,0,
+squares-L11,squares,11,11,13,88,121,0.7273,SAT,0.009396,26,132,52,78,0,
+squares-L10,squares,10,10,13,88,100,0.8800,SAT,0.027451,26,132,52,78,0,
+squares-L9,squares,9,9,13,88,81,1.0864,UNSAT,0.000000,26,0,52,78,0,area lower bound
+rectangles_no_rotation-n4,rectangles_no_rotation,12,10,4,76,120,0.6333,SAT,0.002578,8,24,16,6,0,
+rectangles_rotation-n4,rectangles_rotation,12,10,4,76,120,0.6333,SAT,0.002822,11,24,16,6,3,
+rectangles_no_rotation-n5,rectangles_no_rotation,12,10,5,92,120,0.7667,SAT,0.003381,10,32,20,10,0,
+rectangles_rotation-n5,rectangles_rotation,12,10,5,92,120,0.7667,SAT,0.004751,14,32,20,10,4,
+rectangles_no_rotation-n6,rectangles_no_rotation,12,10,6,102,120,0.8500,SAT,0.005004,12,41,24,15,0,
+rectangles_rotation-n6,rectangles_rotation,12,10,6,102,120,0.8500,SAT,0.007374,17,41,24,15,5,
+rectangles_no_rotation-n7,rectangles_no_rotation,12,10,7,111,120,0.9250,SAT,0.006735,14,51,28,21,0,
+rectangles_rotation-n7,rectangles_rotation,12,10,7,111,120,0.9250,SAT,0.007948,19,51,28,21,5,
+rectangles_no_rotation-n8,rectangles_no_rotation,12,10,8,119,120,0.9917,UNSAT,0.006827,16,62,32,28,0,
+rectangles_rotation-n8,rectangles_rotation,12,10,8,119,120,0.9917,SAT,0.281587,22,62,32,28,6,
+rotation-witness-rectangles_no_rotation,rectangles_no_rotation,5,3,2,12,15,0.8000,UNSAT,0.002711,4,9,8,1,0,
+rotation-witness-rectangles_rotation,rectangles_rotation,5,3,2,12,15,0.8000,SAT,0.001979,6,9,8,1,2,
+random-density-n6,rectangles_rotation,15,12,6,136,180,0.7556,SAT,0.006419,16,41,24,15,4,
+random-density-n8,rectangles_rotation,15,12,8,126,180,0.7000,SAT,0.012802,24,62,32,28,8,
+random-density-n10,rectangles_rotation,15,12,10,127,180,0.7056,SAT,0.021369,30,87,40,45,10,
+random-density-n12,rectangles_rotation,15,12,12,194,180,1.0778,UNSAT,0.000000,33,0,48,66,9,area lower bound
+random-density-n14,rectangles_rotation,15,12,14,209,180,1.1611,UNSAT,0.000000,39,0,56,91,11,area lower bound

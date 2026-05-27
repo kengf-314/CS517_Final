@@ -1,11 +1,10 @@
 [project]
 name = "cs517-final"
 version = "0.1.0"
-description = "Add your description here"
+description = "SMT-based square and rectangle packing experiments for CS517"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
-    "matplotlib>=3.10.9",
-    "pysmt>=0.9.6",
-    "z3-solver>=4.16.0.0",
+    "matplotlib>=3.10",
+    "z3-solver>=4.13",
 ]

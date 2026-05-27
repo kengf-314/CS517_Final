@@ -1,0 +1,27 @@
+{
+  "name": "rotation-witness",
+  "mode": "rectangles_rotation",
+  "container": {
+    "width": 5,
+    "height": 3
+  },
+  "pieces": [
+    {
+      "id": "a",
+      "width": 3,
+      "height": 2,
+      "rotatable": true
+    },
+    {
+      "id": "b",
+      "width": 3,
+      "height": 2,
+      "rotatable": true
+    }
+  ],
+  "settings": {
+    "timeout_seconds": 10,
+    "symmetry_breaking": false
+  }
+}
+

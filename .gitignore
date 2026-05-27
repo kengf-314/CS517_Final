@@ -8,3 +8,14 @@ wheels/
 
 # Virtual environments
 .venv
+
+# LaTeX build byproducts
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+
+# Local upload scratch artifacts
+overleaf_upload/
+overleaf_upload.zip

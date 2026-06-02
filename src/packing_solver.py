@@ -218,14 +218,16 @@ class PackingInstance:
             container_area=self.container_area,
         )
 
-        if check_result == sat:
-            placements = PackingResult._extract_placements(solver.model(), ordered_pieces, x_vars, y_vars, rot_vars)
-            result = PackingResult(self.name, self.mode, Status.SAT, tuple(placements), elapsed, stats)
-            result.validate_result(self)
-            return result
         if check_result == unsat:
             return PackingResult(self.name, self.mode, Status.UNSAT, (), elapsed, stats)
-        return PackingResult(self.name, self.mode, Status.UNKNOWN, (), elapsed, stats, reason=str(check_result))
+
+        if check_result != sat:
+            return PackingResult(self.name, self.mode, Status.UNKNOWN, (), elapsed, stats, reason=str(check_result))
+
+        placements = PackingResult._extract_placements(solver.model(), ordered_pieces, x_vars, y_vars, rot_vars)
+        result = PackingResult(self.name, self.mode, Status.SAT, tuple(placements), elapsed, stats)
+        result.validate_result(self)
+        return result
 
     def _base_stats(self, ordered_pieces: tuple[Piece, ...]) -> PackingStats:
         rotation_variables = sum(self._piece_can_rotate(piece) for piece in ordered_pieces)

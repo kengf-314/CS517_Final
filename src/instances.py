@@ -114,4 +114,3 @@ def rotation_witness_instance(*, allow_rotation: bool) -> PackingInstance:
         timeout_seconds=10,
         symmetry_breaking=False,
     )
-

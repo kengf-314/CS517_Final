@@ -36,7 +36,7 @@ def plot_result_grid(
 
     for ax, (instance, result) in zip(flat_axes, entries):
         _draw_result(ax, instance, result)
-    for ax in flat_axes[len(entries) :]:
+    for ax in flat_axes[len(entries):]:
         ax.axis("off")
 
     fig.tight_layout()
@@ -120,4 +120,3 @@ def _palette() -> list[str]:
         "#ccebc5",
         "#ffed6f",
     ]
-

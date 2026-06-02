@@ -187,4 +187,3 @@ if __name__ == "__main__":
 
     # Keep this line if you still want to see the pop-up window in VS Code; delete it if you only want to save the file
     plt.show()
-

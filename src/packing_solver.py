@@ -131,7 +131,7 @@ def validate_result(instance: PackingInstance, result: PackingResult) -> None:
             raise ValueError(f"Piece {placement.id} exceeds container height")
 
     for i, a in enumerate(result.placements):
-        for b in result.placements[i + 1 :]:
+        for b in result.placements[i + 1:]:
             separated = (
                 a.x + a.width <= b.x
                 or b.x + b.width <= a.x
@@ -300,4 +300,3 @@ def _require_z3() -> None:
         raise ModuleNotFoundError(
             "z3-solver is required. Install dependencies with `python -m pip install -r requirements.txt`."
         ) from Z3_IMPORT_ERROR
-

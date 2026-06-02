@@ -5,7 +5,7 @@ from enum import StrEnum
 from itertools import combinations
 from time import perf_counter
 
-from typing import Any
+from typing import Any, NamedTuple
 
 try:
     from z3 import Bool, If, Int, ModelRef, Or, Solver, is_true, sat, unsat
@@ -177,65 +177,75 @@ class PackingInstance:
                 reason="area lower bound",
             )
 
+        class Z3PieceVariables(NamedTuple):
+            piece: Piece
+            x_var: Any
+            y_var: Any
+            rot_var: Any | None
+            width_expr: Any
+            height_expr: Any
+
         solver = Solver()
         if self.timeout_seconds is not None:
             solver.set(timeout=self.timeout_seconds * 1000)
 
-        x_vars = [Int(f"x_{piece.id}") for piece in ordered_pieces]
-        y_vars = [Int(f"y_{piece.id}") for piece in ordered_pieces]
-        rot_vars = []
-        widths: list[Any] = []
-        heights: list[Any] = []
-
+        z3_pieces: list[Z3PieceVariables] = []
         for piece in ordered_pieces:
             can_rotate = self._piece_can_rotate(piece)
-            rot = Bool(f"rot_{piece.id}") if can_rotate else None
-            rot_vars.append(rot)
-            if rot is None:
-                widths.append(piece.width)
-                heights.append(piece.height)
-            else:
-                widths.append(If(rot, piece.height, piece.width))
-                heights.append(If(rot, piece.width, piece.height))
+            rot_var = Bool(f"rot_{piece.id}") if can_rotate else None
+
+            width_expr = If(rot_var, piece.height, piece.width) if rot_var is not None else piece.width
+            height_expr = If(rot_var, piece.width, piece.height) if rot_var is not None else piece.height
+
+            z3_pieces.append(
+                Z3PieceVariables(
+                    piece=piece,
+                    x_var=Int(f"x_{piece.id}"),
+                    y_var=Int(f"y_{piece.id}"),
+                    rot_var=rot_var,
+                    width_expr=width_expr,
+                    height_expr=height_expr,
+                )
+            )
 
         boundary_constraints = 0
-        for i, _piece in enumerate(ordered_pieces):
-            solver.add(x_vars[i] >= 0)
-            solver.add(y_vars[i] >= 0)
-            solver.add(x_vars[i] + widths[i] <= self.container_width)
-            solver.add(y_vars[i] + heights[i] <= self.container_height)
+        for item in z3_pieces:
+            solver.add(item.x_var >= 0)
+            solver.add(item.y_var >= 0)
+            solver.add(item.x_var + item.width_expr <= self.container_width)
+            solver.add(item.y_var + item.height_expr <= self.container_height)
             boundary_constraints += 4
 
         non_overlap_constraints = 0
-        for i in range(len(ordered_pieces)):
-            for j in range(i + 1, len(ordered_pieces)):
-                solver.add(
-                    Or(
-                        x_vars[i] + widths[i] <= x_vars[j],
-                        x_vars[j] + widths[j] <= x_vars[i],
-                        y_vars[i] + heights[i] <= y_vars[j],
-                        y_vars[j] + heights[j] <= y_vars[i],
-                    )
+        for item_a, item_b in combinations(z3_pieces, 2):
+            solver.add(
+                Or(
+                    item_a.x_var + item_a.width_expr <= item_b.x_var,
+                    item_b.x_var + item_b.width_expr <= item_a.x_var,
+                    item_a.y_var + item_a.height_expr <= item_b.y_var,
+                    item_b.y_var + item_b.height_expr <= item_a.y_var,
                 )
-                non_overlap_constraints += 1
+            )
+            non_overlap_constraints += 1
 
-        if self.symmetry_breaking and ordered_pieces:
+        if self.symmetry_breaking and z3_pieces:
             # Reflection symmetry lets the largest piece be placed in the lower-left half
             # without changing satisfiability.
-            solver.add(2 * x_vars[0] + widths[0] <= self.container_width)
-            solver.add(2 * y_vars[0] + heights[0] <= self.container_height)
+            largest = z3_pieces[0]
+            solver.add(2 * largest.x_var + largest.width_expr <= self.container_width)
+            solver.add(2 * largest.y_var + largest.height_expr <= self.container_height)
 
         start = perf_counter()
         check_result = solver.check()
         elapsed = perf_counter() - start
 
         stats = PackingStats(
-            num_pieces=len(ordered_pieces),
-            num_variables=(2 * len(ordered_pieces)) + sum(rot is not None for rot in rot_vars),
+            num_pieces=len(z3_pieces),
+            num_variables=(2 * len(z3_pieces)) + sum(item.rot_var is not None for item in z3_pieces),
             num_assertions=len(solver.assertions()),
             num_boundary_constraints=boundary_constraints,
             num_non_overlap_constraints=non_overlap_constraints,
-            num_rotation_variables=sum(rot is not None for rot in rot_vars),
+            num_rotation_variables=sum(item.rot_var is not None for item in z3_pieces),
             total_piece_area=self.total_piece_area,
             container_area=self.container_area,
         )
@@ -248,10 +258,10 @@ class PackingInstance:
 
         z3_model = solver.model()
         placements = tuple(
-            Placement.from_z3_variables(z3_model, piece, x, y, rot)
-            for piece, x, y, rot in zip(
-                ordered_pieces, x_vars, y_vars, rot_vars
+            Placement.from_z3_variables(
+                z3_model, item.piece, item.x_var, item.y_var, item.rot_var
             )
+            for item in z3_pieces
         )
         result = PackingResult(self.name, self.mode, Status.SAT, placements, elapsed, stats)
         result.validate_result(self)

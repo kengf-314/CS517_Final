@@ -77,6 +77,28 @@ class Placement:
         else:
             return self.width == piece.width and self.height == piece.height
 
+    @classmethod
+    def from_z3_variables(
+        cls,
+        model: ModelRef,
+        piece: Piece,
+        x_var: Any,
+        y_var: Any,
+        rot_var: Any,
+    ) -> Placement:
+        rotated = bool(rot_var is not None and is_true(model.eval(rot_var, model_completion=True)))
+        actual_width = piece.height if rotated else piece.width
+        actual_height = piece.width if rotated else piece.height
+
+        return cls(
+            id=piece.id,
+            x=model.eval(x_var, model_completion=True).as_long(),
+            y=model.eval(y_var, model_completion=True).as_long(),
+            width=actual_width,
+            height=actual_height,
+            rotated=rotated,
+        )
+
 
 @dataclass(frozen=True)
 class PackingInstance:
@@ -224,8 +246,14 @@ class PackingInstance:
         if check_result != sat:
             return PackingResult(self.name, self.mode, Status.UNKNOWN, (), elapsed, stats, reason=str(check_result))
 
-        placements = PackingResult._extract_placements(solver.model(), ordered_pieces, x_vars, y_vars, rot_vars)
-        result = PackingResult(self.name, self.mode, Status.SAT, tuple(placements), elapsed, stats)
+        z3_model = solver.model()
+        placements = tuple(
+            Placement.from_z3_variables(z3_model, piece, x, y, rot)
+            for piece, x, y, rot in zip(
+                ordered_pieces, x_vars, y_vars, rot_vars
+            )
+        )
+        result = PackingResult(self.name, self.mode, Status.SAT, placements, elapsed, stats)
         result.validate_result(self)
         return result
 
@@ -306,32 +334,6 @@ class PackingResult:
         for current_placement, other_placement in combinations(self.placements, 2):
             if current_placement.overlaps_with(other_placement):
                 raise ValueError(f"{current_placement} and {other_placement} overlap")
-
-    @classmethod
-    def _extract_placements(
-        cls,
-        model: ModelRef,
-        pieces: tuple[Piece, ...],
-        x_vars: list[Any],
-        y_vars: list[Any],
-        rot_vars: list[Any],
-    ) -> list[Placement]:
-        placements: list[Placement] = []
-        for piece, x_var, y_var, rot_var in zip(pieces, x_vars, y_vars, rot_vars):
-            rotated = bool(rot_var is not None and is_true(model.eval(rot_var, model_completion=True)))
-            width = piece.height if rotated else piece.width
-            height = piece.width if rotated else piece.height
-            placements.append(
-                Placement(
-                    id=piece.id,
-                    x=model.eval(x_var, model_completion=True).as_long(),
-                    y=model.eval(y_var, model_completion=True).as_long(),
-                    width=width,
-                    height=height,
-                    rotated=rotated,
-                )
-            )
-        return placements
 
 
 def solve_square_packing(container_size: int, square_sizes: list[int]) -> list[tuple[int, int]] | None:

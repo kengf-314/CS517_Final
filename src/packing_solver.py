@@ -4,16 +4,12 @@ from dataclasses import dataclass
 from enum import StrEnum
 from itertools import combinations
 from time import perf_counter
+from typing import NamedTuple
+from z3 import Bool, If, Int, IntVal, Or, Solver, is_true, sat, unsat
 
-from typing import Any, NamedTuple
-
-try:
-    from z3 import Bool, If, Int, ModelRef, Or, Solver, is_true, sat, unsat
-except ModuleNotFoundError as exc:  # pragma: no cover - exercised only without deps
-    Bool = If = Int = ModelRef = Or = Solver = is_true = sat = unsat = None
-    Z3_IMPORT_ERROR = exc
-else:
-    Z3_IMPORT_ERROR = None
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from z3 import ArithRef, BoolRef, ModelRef
 
 
 class Mode(StrEnum):
@@ -82,9 +78,9 @@ class Placement:
         cls,
         model: ModelRef,
         piece: Piece,
-        x_var: Any,
-        y_var: Any,
-        rot_var: Any,
+        x_var: ArithRef,
+        y_var: ArithRef,
+        rot_var: BoolRef | None,
     ) -> Placement:
         rotated = bool(rot_var is not None and is_true(model.eval(rot_var, model_completion=True)))
         actual_width = piece.height if rotated else piece.width
@@ -92,8 +88,8 @@ class Placement:
 
         return cls(
             id=piece.id,
-            x=model.eval(x_var, model_completion=True).as_long(),
-            y=model.eval(y_var, model_completion=True).as_long(),
+            x=model.eval(x_var, model_completion=True).as_long(),  # type: ignore
+            y=model.eval(y_var, model_completion=True).as_long(),  # type: ignore
             width=actual_width,
             height=actual_height,
             rotated=rotated,
@@ -159,11 +155,6 @@ class PackingInstance:
         )
 
     def solve(self) -> PackingResult:
-        if Z3_IMPORT_ERROR is not None:
-            raise ModuleNotFoundError(
-                "z3-solver is required. Install dependencies with `python -m pip install -r requirements.txt`."
-            ) from Z3_IMPORT_ERROR
-
         ordered_pieces = tuple(sorted(self.pieces, key=lambda piece: (-piece.area, piece.id)))
         stats_base = self._base_stats(ordered_pieces)
         if self.total_piece_area > self.container_area:
@@ -179,11 +170,11 @@ class PackingInstance:
 
         class Z3PieceVariables(NamedTuple):
             piece: Piece
-            x_var: Any
-            y_var: Any
-            rot_var: Any | None
-            width_expr: Any
-            height_expr: Any
+            x_var: ArithRef
+            y_var: ArithRef
+            rot_var: BoolRef | None
+            width_expr: ArithRef
+            height_expr: ArithRef
 
         solver = Solver()
         if self.timeout_seconds is not None:
@@ -194,8 +185,8 @@ class PackingInstance:
             can_rotate = self._piece_can_rotate(piece)
             rot_var = Bool(f"rot_{piece.id}") if can_rotate else None
 
-            width_expr = If(rot_var, piece.height, piece.width) if rot_var is not None else piece.width
-            height_expr = If(rot_var, piece.width, piece.height) if rot_var is not None else piece.height
+            width_expr: ArithRef = If(rot_var, piece.height, piece.width) if rot_var is not None else IntVal(piece.width)  # type: ignore
+            height_expr: ArithRef = If(rot_var, piece.width, piece.height) if rot_var is not None else IntVal(piece.height)  # type: ignore
 
             z3_pieces.append(
                 Z3PieceVariables(

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from .instances import load_instance
-from .packing_solver import solve_packing
+from .packing_solver import PackingInstance
 from .visualize import plot_result
 
 
@@ -16,7 +16,7 @@ def main() -> None:
     args = parser.parse_args()
 
     instance = load_instance(args.input)
-    result = solve_packing(instance)
+    result = instance.solve()
     print(
         json.dumps(
             {

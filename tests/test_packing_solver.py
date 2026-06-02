@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from src.instances import instance_from_dict, rotation_witness_instance
-from src.packing_solver import PackingInstance, Piece, solve_packing, squares_instance, validate_result
+from src.packing_solver import PackingInstance, Piece
 
 
 def z3_available() -> bool:
@@ -17,12 +17,12 @@ def z3_available() -> bool:
 @unittest.skipUnless(z3_available(), "z3-solver is not installed")
 class PackingSolverTests(unittest.TestCase):
     def test_single_square_is_sat(self) -> None:
-        result = solve_packing(squares_instance(5, [3], symmetry_breaking=False))
+        result = PackingInstance.from_squares(5, [3], symmetry_breaking=False).solve()
         self.assertEqual(result.status, "SAT")
         self.assertEqual(len(result.placements), 1)
 
     def test_area_bound_unsat(self) -> None:
-        result = solve_packing(squares_instance(3, [3, 2], symmetry_breaking=False))
+        result = PackingInstance.from_squares(3, [3, 2], symmetry_breaking=False).solve()
         self.assertEqual(result.status, "UNSAT")
         self.assertEqual(result.reason, "area lower bound")
 
@@ -35,12 +35,12 @@ class PackingSolverTests(unittest.TestCase):
             mode="rectangles_no_rotation",
             symmetry_breaking=False,
         )
-        result = solve_packing(instance)
+        result = instance.solve()
         self.assertEqual(result.status, "UNSAT")
 
     def test_rotation_changes_feasibility(self) -> None:
-        without_rotation = solve_packing(rotation_witness_instance(allow_rotation=False))
-        with_rotation = solve_packing(rotation_witness_instance(allow_rotation=True))
+        without_rotation = rotation_witness_instance(allow_rotation=False).solve()
+        with_rotation = rotation_witness_instance(allow_rotation=True).solve()
         self.assertEqual(without_rotation.status, "UNSAT")
         self.assertEqual(with_rotation.status, "SAT")
         self.assertTrue(any(placement.rotated for placement in with_rotation.placements))
@@ -58,9 +58,9 @@ class PackingSolverTests(unittest.TestCase):
                 "settings": {"timeout_seconds": 5, "symmetry_breaking": False},
             }
         )
-        result = solve_packing(instance)
+        result = instance.solve()
         self.assertEqual(result.status, "SAT")
-        validate_result(instance, result)
+        result.validate_result(instance)
 
 
 if __name__ == "__main__":

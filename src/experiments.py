@@ -5,7 +5,7 @@ import csv
 from pathlib import Path
 
 from .instances import random_rectangles_instance, rotation_witness_instance
-from .packing_solver import PackingInstance, PackingResult, Piece, solve_packing, squares_instance
+from .packing_solver import PackingInstance, PackingResult, Piece
 from .visualize import plot_result, plot_result_grid
 
 
@@ -15,7 +15,7 @@ def final_preset() -> list[PackingInstance]:
     square_sizes = [5, 4, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1]
     for side in [30, 25, 20, 15, 12, 11, 10, 9]:
         instances.append(
-            squares_instance(
+            PackingInstance.from_squares(
                 side,
                 square_sizes,
                 name=f"squares-L{side}",
@@ -76,7 +76,7 @@ def run_instances(instances: list[PackingInstance], output_dir: Path) -> list[tu
     rows: list[tuple[PackingInstance, PackingResult]] = []
     for instance in instances:
         print(f"Running {instance.name} ({instance.mode})")
-        result = solve_packing(instance)
+        result = instance.solve()
         rows.append((instance, result))
         plot_result(instance, result, image_dir / f"{instance.name}.png")
         print(

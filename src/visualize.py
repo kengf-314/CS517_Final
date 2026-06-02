@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .packing_solver import PackingInstance, PackingResult
+from .packing_solver import PackingInstance, PackingResult, Status
 
 
 def plot_result(instance: PackingInstance, result: PackingResult, output_path: str | Path) -> None:
@@ -57,7 +57,7 @@ def _draw_result(ax, instance: PackingInstance, result: PackingResult) -> None:
             linewidth=2,
         )
     )
-    if result.status == "SAT":
+    if result.status == Status.SAT:
         colors = _palette()
         for i, placement in enumerate(result.placements):
             ax.add_patch(

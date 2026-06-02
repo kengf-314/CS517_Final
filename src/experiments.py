@@ -5,7 +5,7 @@ import csv
 from pathlib import Path
 
 from .instances import random_rectangles_instance, rotation_witness_instance
-from .packing_solver import PackingInstance, PackingResult, Piece
+from .packing_solver import Mode, PackingInstance, PackingResult, Piece
 from .visualize import plot_result, plot_result_grid
 
 
@@ -35,7 +35,7 @@ def final_preset() -> list[PackingInstance]:
         Piece("r7", 2, 4, True),
     )
     for count in [4, 5, 6, 7, 8]:
-        for mode in ["rectangles_no_rotation", "rectangles_rotation"]:
+        for mode in [Mode.RECTANGLES_NO_ROTATION, Mode.RECTANGLES_ROTATION]:
             instances.append(
                 PackingInstance(
                     name=f"{mode}-n{count}",
@@ -61,7 +61,7 @@ def final_preset() -> list[PackingInstance]:
                 min_side=2,
                 max_side=6,
                 seed=517 + count,
-                mode="rectangles_rotation",
+                mode=Mode.RECTANGLES_ROTATION,
                 timeout_seconds=10,
                 symmetry_breaking=True,
             )

@@ -20,13 +20,13 @@ def save_instance(instance: PackingInstance, path: str | Path) -> None:
 def instance_from_dict(data: dict[str, Any]) -> PackingInstance:
     container = data["container"]
     settings = data.get("settings", {})
-    mode = data.get("mode", settings.get("mode", "rectangles_rotation"))
+    mode = Mode(data.get("mode", settings.get("mode", Mode.RECTANGLES_ROTATION)))
     pieces = tuple(
         Piece(
             id=str(piece.get("id", f"p{i}")),
             width=int(piece["width"]),
             height=int(piece["height"]),
-            rotatable=bool(piece.get("rotatable", mode == "rectangles_rotation")),
+            rotatable=bool(piece.get("rotatable", mode == Mode.RECTANGLES_ROTATION)),
         )
         for i, piece in enumerate(data["pieces"])
     )
@@ -74,7 +74,7 @@ def random_rectangles_instance(
     min_side: int = 1,
     max_side: int = 6,
     seed: int = 0,
-    mode: Mode = "rectangles_rotation",
+    mode: Mode = Mode.RECTANGLES_ROTATION,
     rotatable: bool = True,
     timeout_seconds: int | None = 10,
     symmetry_breaking: bool = True,
@@ -101,7 +101,7 @@ def random_rectangles_instance(
 
 
 def rotation_witness_instance(*, allow_rotation: bool) -> PackingInstance:
-    mode: Mode = "rectangles_rotation" if allow_rotation else "rectangles_no_rotation"
+    mode: Mode = Mode.RECTANGLES_ROTATION if allow_rotation else Mode.RECTANGLES_NO_ROTATION
     return PackingInstance(
         name=f"rotation-witness-{mode}",
         container_width=5,

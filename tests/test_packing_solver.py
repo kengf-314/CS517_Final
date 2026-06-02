@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from src.instances import instance_from_dict, rotation_witness_instance
-from src.packing_solver import PackingInstance, Piece
+from src.packing_solver import Mode, PackingInstance, Piece, Status
 
 
 def z3_available() -> bool:
@@ -18,12 +18,12 @@ def z3_available() -> bool:
 class PackingSolverTests(unittest.TestCase):
     def test_single_square_is_sat(self) -> None:
         result = PackingInstance.from_squares(5, [3], symmetry_breaking=False).solve()
-        self.assertEqual(result.status, "SAT")
+        self.assertEqual(result.status, Status.SAT)
         self.assertEqual(len(result.placements), 1)
 
     def test_area_bound_unsat(self) -> None:
         result = PackingInstance.from_squares(3, [3, 2], symmetry_breaking=False).solve()
-        self.assertEqual(result.status, "UNSAT")
+        self.assertEqual(result.status, Status.UNSAT)
         self.assertEqual(result.reason, "area lower bound")
 
     def test_two_large_rectangles_cannot_fit(self) -> None:
@@ -32,24 +32,24 @@ class PackingSolverTests(unittest.TestCase):
             container_width=5,
             container_height=5,
             pieces=(Piece("a", 4, 4), Piece("b", 4, 4)),
-            mode="rectangles_no_rotation",
+            mode=Mode.RECTANGLES_NO_ROTATION,
             symmetry_breaking=False,
         )
         result = instance.solve()
-        self.assertEqual(result.status, "UNSAT")
+        self.assertEqual(result.status, Status.UNSAT)
 
     def test_rotation_changes_feasibility(self) -> None:
         without_rotation = rotation_witness_instance(allow_rotation=False).solve()
         with_rotation = rotation_witness_instance(allow_rotation=True).solve()
-        self.assertEqual(without_rotation.status, "UNSAT")
-        self.assertEqual(with_rotation.status, "SAT")
+        self.assertEqual(without_rotation.status, Status.UNSAT)
+        self.assertEqual(with_rotation.status, Status.SAT)
         self.assertTrue(any(placement.rotated for placement in with_rotation.placements))
 
     def test_json_instance_round_trip_shape(self) -> None:
         instance = instance_from_dict(
             {
                 "name": "json-smoke",
-                "mode": "rectangles_rotation",
+                "mode": Mode.RECTANGLES_ROTATION,
                 "container": {"width": 6, "height": 4},
                 "pieces": [
                     {"id": "a", "width": 4, "height": 2, "rotatable": True},
@@ -59,7 +59,7 @@ class PackingSolverTests(unittest.TestCase):
             }
         )
         result = instance.solve()
-        self.assertEqual(result.status, "SAT")
+        self.assertEqual(result.status, Status.SAT)
         result.validate_result(instance)
 
 

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+from itertools import combinations
 from time import perf_counter
+
 from typing import Any
 
 try:
@@ -50,6 +52,30 @@ class Placement:
     width: int
     height: int
     rotated: bool = False
+
+    def is_within_container(self, container_width: int, container_height: int) -> bool:
+        if self.x < 0 or self.y < 0:
+            return False
+        if self.x + self.width > container_width:
+            return False
+        if self.y + self.height > container_height:
+            return False
+        return True
+
+    def overlaps_with(self, other: Placement) -> bool:
+        is_separated = (
+            self.x + self.width <= other.x
+            or other.x + other.width <= self.x
+            or self.y + self.height <= other.y
+            or other.y + other.height <= self.y
+        )
+        return not is_separated
+
+    def matches_piece_dimensions(self, piece: Piece) -> bool:
+        if self.rotated:
+            return self.width == piece.height and self.height == piece.width
+        else:
+            return self.width == piece.width and self.height == piece.height
 
 
 @dataclass(frozen=True)
@@ -247,27 +273,37 @@ class PackingResult:
     def validate_result(self, instance: PackingInstance) -> None:
         if self.status != Status.SAT:
             return
-        by_id = {piece.id: piece for piece in instance.pieces}
-        for placement in self.placements:
-            if placement.id not in by_id:
-                raise ValueError(f"Unknown placement id {placement.id}")
-            if placement.x < 0 or placement.y < 0:
-                raise ValueError(f"Piece {placement.id} has a negative coordinate")
-            if placement.x + placement.width > instance.container_width:
-                raise ValueError(f"Piece {placement.id} exceeds container width")
-            if placement.y + placement.height > instance.container_height:
-                raise ValueError(f"Piece {placement.id} exceeds container height")
 
-        for i, a in enumerate(self.placements):
-            for b in self.placements[i + 1:]:
-                separated = (
-                    a.x + a.width <= b.x
-                    or b.x + b.width <= a.x
-                    or a.y + a.height <= b.y
-                    or b.y + b.height <= a.y
+        if len(self.placements) != len(instance.pieces):
+            raise ValueError("Duplicate or missing placements detected")
+
+        expected_ids = {piece.id for piece in instance.pieces}
+        actual_ids = {placement.id for placement in self.placements}
+
+        if expected_ids != actual_ids:
+            raise ValueError(
+                "Placement pieces do not match the instance pieces.\n"
+                f"Expected IDs: {tuple(sorted(expected_ids))}\n"
+                f"Got      IDs: {tuple(sorted(actual_ids))}"
+            )
+
+        pieces_by_id = {piece.id: piece for piece in instance.pieces}
+        for placement in self.placements:
+            original_piece = pieces_by_id[placement.id]
+
+            if not placement.matches_piece_dimensions(original_piece):
+                raise ValueError(
+                    f"Piece {placement.id} dimensions were altered. "
+                    f"Original: {original_piece}, "
+                    f"Got: {placement}"
                 )
-                if not separated:
-                    raise ValueError(f"Pieces {a.id} and {b.id} overlap")
+
+            if not placement.is_within_container(instance.container_width, instance.container_height):
+                raise ValueError(f"{placement} exceeds container boundaries")
+
+        for current_placement, other_placement in combinations(self.placements, 2):
+            if current_placement.overlaps_with(other_placement):
+                raise ValueError(f"{current_placement} and {other_placement} overlap")
 
     @classmethod
     def _extract_placements(

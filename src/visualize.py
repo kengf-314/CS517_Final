@@ -57,31 +57,8 @@ def _draw_result(ax, instance: PackingInstance, result: PackingResult) -> None:
             linewidth=2,
         )
     )
-    if result.status == Status.SAT:
-        colors = _palette()
-        for i, placement in enumerate(result.placements):
-            ax.add_patch(
-                patches.Rectangle(
-                    (placement.x, placement.y),
-                    placement.width,
-                    placement.height,
-                    facecolor=colors[i % len(colors)],
-                    edgecolor="black",
-                    alpha=0.9,
-                )
-            )
-            label = placement.id
-            if placement.rotated:
-                label += " R"
-            ax.text(
-                placement.x + placement.width / 2,
-                placement.y + placement.height / 2,
-                label,
-                ha="center",
-                va="center",
-                fontsize=7,
-            )
-    else:
+
+    if result.status != Status.SAT:
         ax.text(
             instance.container_width / 2,
             instance.container_height / 2,
@@ -91,6 +68,30 @@ def _draw_result(ax, instance: PackingInstance, result: PackingResult) -> None:
             color="red",
             fontsize=12,
             fontweight="bold",
+        )
+
+    colors = _palette()
+    for i, placement in enumerate(result.placements):
+        ax.add_patch(
+            patches.Rectangle(
+                (placement.x, placement.y),
+                placement.width,
+                placement.height,
+                facecolor=colors[i % len(colors)],
+                edgecolor="black",
+                alpha=0.9,
+            )
+        )
+        label = placement.id
+        if placement.rotated:
+            label += " R"
+        ax.text(
+            placement.x + placement.width / 2,
+            placement.y + placement.height / 2,
+            label,
+            ha="center",
+            va="center",
+            fontsize=7,
         )
 
     ax.set_title(

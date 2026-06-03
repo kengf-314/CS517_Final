@@ -1,0 +1,13 @@
+name,mode,container_width,container_height,num_pieces,total_piece_area,container_area,density,status,solver_time_seconds,variables,assertions,boundary_constraints,non_overlap_constraints,rotation_variables,reason
+0,rectangles_rotation,10,8,6,80,80,1.0000,SAT,0.005170,15,41,24,15,3,
+1,rectangles_rotation,10,8,20,80,80,1.0000,SAT,1.002029,45,272,80,190,5,
+2,rectangles_rotation,10,8,14,80,80,1.0000,SAT,0.144383,32,149,56,91,4,
+3,rectangles_rotation,10,8,13,80,80,1.0000,SAT,0.143293,31,132,52,78,5,
+4,rectangles_rotation,10,8,28,80,80,1.0000,UNKNOWN,10.007503,64,492,112,378,8,unknown
+5,rectangles_rotation,10,8,26,80,80,1.0000,SAT,4.149806,57,431,104,325,5,
+6,rectangles_rotation,10,8,35,80,80,1.0000,UNKNOWN,10.017224,79,737,140,595,9,unknown
+7,rectangles_rotation,10,8,23,80,80,1.0000,SAT,3.674140,50,347,92,253,4,
+8,rectangles_rotation,10,8,21,80,80,1.0000,SAT,1.681588,47,296,84,210,5,
+9,rectangles_rotation,10,8,25,80,80,1.0000,SAT,9.849470,57,402,100,300,7,
+10,rectangles_rotation,10,8,27,80,80,1.0000,UNKNOWN,10.014804,65,461,108,351,11,unknown
+11,rectangles_rotation,10,8,2,80,80,1.0000,SAT,0.001622,5,11,8,1,1,

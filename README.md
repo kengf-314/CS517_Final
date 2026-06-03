@@ -73,3 +73,9 @@ non-overlap, a rotation-only feasibility witness, and JSON instance loading.
 - `src/visualize.py`: Matplotlib packing visualizations.
 - `src/experiments.py`: reproducible experiment preset and CSV/image output.
 - `paper/main.tex`: project report.
+
+
+## TODO
+Like all TODOs, this part might not be completed.
+- `L-Shape`?
+  ![L-Shape Example](imgs/Lonpos200+.png)
